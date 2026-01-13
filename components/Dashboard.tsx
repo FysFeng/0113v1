@@ -174,7 +174,6 @@ const Dashboard: React.FC<DashboardProps> = ({ news, availableBrands, onDrillDow
   
   const [compareBrandA, setCompareBrandA] = useState('Changan');
   const [compareBrandB, setCompareBrandB] = useState('BYD');
-  const [trendPeriod, setTrendPeriod] = useState('Month');
   const [comparisonTab, setComparisonTab] = useState<'trend' | 'radar' | 'sentiment'>('trend');
   const [shareMetric, setShareMetric] = useState<'total' | NewsType>('total');
 
@@ -230,12 +229,6 @@ const Dashboard: React.FC<DashboardProps> = ({ news, availableBrands, onDrillDow
     return top7;
   }, [news, shareMetric]);
 
-  const availableTypes = useMemo(() => {
-      const types = new Set<string>();
-      news.forEach(n => types.add(n.type));
-      return types;
-  }, [news]);
-
   // --- 3. MAP DATA ---
   const mapData = useMemo(() => {
     const counts: Record<string, number> = { 'Abu Dhabi': 0, 'Dubai': 0, 'Sharjah': 0, 'Ajman': 0, 'Umm Al Quwain': 0, 'Ras Al Khaimah': 0, 'Fujairah': 0 };
@@ -263,15 +256,10 @@ const Dashboard: React.FC<DashboardProps> = ({ news, availableBrands, onDrillDow
   }, [news]);
 
   // --- 5. COMPARISON DATA ---
+  // Important: Now relying fully on 'news' prop which is already filtered by sidebar date range.
   const getBrandNews = useMemo(() => (brand: string) => {
-    const now = new Date();
-    const cutoff = new Date();
-    if (trendPeriod === 'Week') cutoff.setDate(now.getDate() - 7);
-    if (trendPeriod === 'Month') cutoff.setDate(now.getDate() - 30);
-    if (trendPeriod === 'Quarter') cutoff.setDate(now.getDate() - 90);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
-    return news.filter(n => n.brand === brand && n.date >= cutoffStr);
-  }, [news, trendPeriod]);
+    return news.filter(n => n.brand === brand);
+  }, [news]);
 
   const newsA = useMemo(() => getBrandNews(compareBrandA), [getBrandNews, compareBrandA]);
   const newsB = useMemo(() => getBrandNews(compareBrandB), [getBrandNews, compareBrandB]);
@@ -281,7 +269,7 @@ const Dashboard: React.FC<DashboardProps> = ({ news, availableBrands, onDrillDow
     const dates = Array.from(new Set([...newsA, ...newsB].map(n => n.date))).sort();
     dates.forEach(d => {
         dataPoints.push({
-            date: d.substring(5),
+            date: d.substring(5), // Show MM-DD
             [compareBrandA]: newsA.filter(n => n.date === d).length,
             [compareBrandB]: newsB.filter(n => n.date === d).length
         });
@@ -349,8 +337,9 @@ const Dashboard: React.FC<DashboardProps> = ({ news, availableBrands, onDrillDow
                <h1 className="text-lg font-bold text-white tracking-tight">UAE COMMAND CENTER</h1>
             </div>
          </div>
-         <div className="text-[10px] font-mono text-slate-500 bg-slate-900 px-3 py-1 rounded border border-slate-800">
-            {new Date().toISOString().split('T')[0]}
+         <div className="text-[10px] font-mono text-slate-500 bg-slate-900 px-3 py-1 rounded border border-slate-800 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            {timeLabel}
          </div>
       </header>
 
